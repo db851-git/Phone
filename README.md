@@ -15,12 +15,19 @@ smooth, tasteful scroll animations.
 - **About** page explaining grading, warranty and the store
 - **Database-backed catalog** (PostgreSQL via Prisma) — the source of truth for
   the whole storefront, with automatic fallback to the seed JSON when no DB is set
-- **Admin stock manager** at `/admin` — password-gated; add/edit/delete products,
-  drag-and-drop **photo uploads** (multiple per phone, auto-compressed), rich
-  **descriptions**, a **featured** toggle for the homepage, stock counts, and
-  JSON import/export. Changes go live for all visitors.
-- **REST API**: public `GET /api/products`, protected create/update/delete, and
-  image upload/serve endpoints (photos stored in the database — no S3 to set up)
+- **Back-office admin** at `/admin` — password-gated, tabbed dashboard:
+  - **Overview**: catalog size, stock value, on-sale / featured / out-of-stock counts
+  - **Products**: add/edit/delete, drag-and-drop **photo uploads** (multiple per
+    phone, auto-compressed), **descriptions**, **sale prices**, **featured** toggle,
+    stock counts, JSON import/export
+  - **Offers & pricing**: publish a site-wide **offer banner**, and apply
+    **dynamic markdowns** in bulk (X% off a brand / tag / everything, one click)
+  - **Trade-in**: manage buy-back values, storage/condition multipliers and the
+    store-credit bonus — plus a live **trade-vs-retail margin** table
+- Changes go live for all visitors (ISR ~60s)
+- **REST API**: public catalog/settings/trade-in reads; protected product,
+  trade-in, settings and image endpoints. Photos are stored in the database — no
+  S3/Cloudinary to configure.
 - **Product galleries** on the PDP with an SVG fallback when a phone has no photos
 - Fully responsive, keyboard-friendly, and respects `prefers-reduced-motion`
 

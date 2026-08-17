@@ -1,48 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Reveal from "../../components/Reveal";
 import { gbp } from "../../lib/format";
-
-// Base trade-in values keyed by model line; multiplied by condition + storage.
-const MODELS = [
-  { name: "iPhone 17 Pro Max", base: 780 },
-  { name: "iPhone 17 Pro", base: 700 },
-  { name: "iPhone 16 Pro Max", base: 620 },
-  { name: "iPhone 16 Pro", base: 520 },
-  { name: "iPhone 16", base: 430 },
-  { name: "iPhone 15 Pro Max", base: 500 },
-  { name: "iPhone 15 Pro", base: 420 },
-  { name: "iPhone 15", base: 340 },
-  { name: "iPhone 14 Pro Max", base: 380 },
-  { name: "iPhone 14", base: 280 },
-  { name: "iPhone 13 Pro", base: 260 },
-  { name: "iPhone 13", base: 220 },
-  { name: "iPhone 12", base: 160 },
-  { name: "iPhone 11", base: 120 },
-  { name: "iPhone SE (2020)", base: 70 },
-  { name: "Galaxy S25 Ultra", base: 560 },
-  { name: "Galaxy S24 Ultra", base: 440 },
-  { name: "Galaxy S24", base: 320 },
-  { name: "Galaxy S23", base: 240 },
-  { name: "Galaxy A55 / A5x", base: 130 },
-];
-
-const STORAGES = [
-  { label: "64GB", mult: 0.92 },
-  { label: "128GB", mult: 1 },
-  { label: "256GB", mult: 1.1 },
-  { label: "512GB", mult: 1.2 },
-  { label: "1TB", mult: 1.28 },
-];
-
-const CONDITIONS = [
-  { label: "Like new", desc: "Flawless, no marks", mult: 1 },
-  { label: "Good", desc: "Light wear, screen perfect", mult: 0.82 },
-  { label: "Fair", desc: "Visible scratches, works fully", mult: 0.62 },
-  { label: "Broken", desc: "Cracked or faulty", mult: 0.32 },
-];
+import { DEFAULT_TRADEIN, DEFAULT_TRADEIN_MODELS } from "../../lib/products";
 
 const STEPS = [
   { n: 1, t: "Get your quote", d: "Pick your model and condition for an instant price." },
@@ -50,19 +12,47 @@ const STEPS = [
   { n: 3, t: "Get paid same day", d: "Bank transfer or store credit — your choice." },
 ];
 
+const SEED_MODELS = DEFAULT_TRADEIN_MODELS.map((m) => ({ name: m.name, base: m.baseValue }));
+
 export default function SellPage() {
-  const [model, setModel] = useState(MODELS[5].name);
+  // Trade-in config is admin-managed; start from defaults, then load live values.
+  const [models, setModels] = useState(SEED_MODELS);
+  const [storages, setStorages] = useState(DEFAULT_TRADEIN.storages);
+  const [conditions, setConditions] = useState(DEFAULT_TRADEIN.conditions);
+  const [bonusPercent, setBonusPercent] = useState(DEFAULT_TRADEIN.bonusPercent);
+
+  const [model, setModel] = useState(SEED_MODELS[5]?.name || SEED_MODELS[0]?.name);
   const [storage, setStorage] = useState("128GB");
   const [condition, setCondition] = useState("Good");
 
-  const quote = useMemo(() => {
-    const m = MODELS.find((x) => x.name === model)?.base || 100;
-    const s = STORAGES.find((x) => x.label === storage)?.mult || 1;
-    const c = CONDITIONS.find((x) => x.label === condition)?.mult || 1;
-    return Math.round((m * s * c) / 5) * 5;
-  }, [model, storage, condition]);
+  useEffect(() => {
+    fetch("/api/trade-in")
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (Array.isArray(cfg.models) && cfg.models.length) {
+          const active = cfg.models.filter((m) => m.active !== false);
+          setModels(active.map((m) => ({ name: m.name, base: m.baseValue })));
+        }
+        if (Array.isArray(cfg.storages)) setStorages(cfg.storages);
+        if (Array.isArray(cfg.conditions)) setConditions(cfg.conditions);
+        if (typeof cfg.bonusPercent === "number") setBonusPercent(cfg.bonusPercent);
+      })
+      .catch(() => {});
+  }, []);
 
-  const tradeBonus = Math.round(quote * 1.1 / 5) * 5;
+  // Keep the selected option valid if the live config changes it.
+  useEffect(() => {
+    if (models.length && !models.some((m) => m.name === model)) setModel(models[0].name);
+  }, [models, model]);
+
+  const quote = useMemo(() => {
+    const m = models.find((x) => x.name === model)?.base || 100;
+    const s = storages.find((x) => x.label === storage)?.mult || 1;
+    const c = conditions.find((x) => x.label === condition)?.mult || 1;
+    return Math.round((m * s * c) / 5) * 5;
+  }, [model, storage, condition, models, storages, conditions]);
+
+  const tradeBonus = Math.round((quote * (1 + bonusPercent / 100)) / 5) * 5;
 
   return (
     <>
@@ -96,7 +86,7 @@ export default function SellPage() {
                   onChange={(e) => setModel(e.target.value)}
                   className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-[15px] outline-none focus:border-accent"
                 >
-                  {MODELS.map((m) => (
+                  {models.map((m) => (
                     <option key={m.name} value={m.name}>{m.name}</option>
                   ))}
                 </select>
@@ -105,7 +95,7 @@ export default function SellPage() {
               <div>
                 <label className="block text-[13px] font-semibold text-ink mb-2">Storage</label>
                 <div className="flex flex-wrap gap-2">
-                  {STORAGES.map((s) => (
+                  {storages.map((s) => (
                     <button
                       key={s.label}
                       onClick={() => setStorage(s.label)}
@@ -122,7 +112,7 @@ export default function SellPage() {
               <div>
                 <label className="block text-[13px] font-semibold text-ink mb-2">Condition</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {CONDITIONS.map((c) => (
+                  {conditions.map((c) => (
                     <button
                       key={c.label}
                       onClick={() => setCondition(c.label)}
@@ -156,7 +146,7 @@ export default function SellPage() {
                 </AnimatePresence>
                 <p className="mt-3 text-[13px] text-white/70">
                   or <span className="font-semibold text-white">{gbp(tradeBonus)}</span> in store credit
-                  <span className="block text-white/50">(+10% trade-in bonus)</span>
+                  <span className="block text-white/50">{`(+${bonusPercent}% trade-in bonus)`}</span>
                 </p>
               </div>
               <div className="mt-6 space-y-2">

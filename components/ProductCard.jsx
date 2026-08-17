@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import ProductImage from "./ProductImage";
-import { GRADE_INFO } from "../lib/products";
+import { GRADE_INFO, isOnSale, effectivePrice } from "../lib/products";
 import { gbp } from "../lib/format";
 
 export default function ProductCard({ product, index = 0 }) {
@@ -26,6 +26,11 @@ export default function ProductCard({ product, index = 0 }) {
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: grade.dot }} />
             {product.grade === "New" ? "New" : `Grade ${product.grade}`}
           </span>
+          {isOnSale(product) && (
+            <span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">
+              Sale
+            </span>
+          )}
           <ProductImage
             product={product}
             className="h-44 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
@@ -38,7 +43,12 @@ export default function ProductCard({ product, index = 0 }) {
           </h3>
           <p className="text-[13px] text-ink-soft">{product.storage} · {product.color}</p>
           <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-[17px] font-semibold text-ink">{gbp(product.price)}</span>
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-[17px] font-semibold text-ink">{gbp(effectivePrice(product))}</span>
+              {isOnSale(product) && (
+                <span className="text-[12px] text-ink-soft line-through">{gbp(product.price)}</span>
+              )}
+            </span>
             <span className="text-[12px] text-accent group-hover:underline">View →</span>
           </div>
         </div>

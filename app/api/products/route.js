@@ -44,6 +44,7 @@ export async function POST(request) {
     storage: body.storage || "128GB",
     grade: body.grade || "A",
     price: Number(body.price) || 0,
+    salePrice: body.salePrice === "" || body.salePrice == null ? null : Number(body.salePrice),
     color: body.color,
     description: body.description || "",
     images,

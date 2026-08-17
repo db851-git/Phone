@@ -18,6 +18,7 @@ export default function Nav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [offer, setOffer] = useState(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -28,6 +29,16 @@ export default function Nav() {
 
   useEffect(() => setOpen(false), [pathname]);
 
+  // Live offer banner, controlled from the admin.
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => setOffer(d.offer))
+      .catch(() => {});
+  }, []);
+
+  const showOffer = offer?.active && offer?.text;
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
@@ -36,6 +47,19 @@ export default function Nav() {
           : "bg-white/0"
       }`}
     >
+      {showOffer && (
+        <Link
+          href={offer.link || "/shop"}
+          className="block bg-ink text-white text-center text-[12px] py-1.5 px-4 hover:bg-ink/90 transition-colors"
+        >
+          {offer.text}
+          {offer.code && (
+            <span className="ml-1 opacity-80">
+              · code <span className="font-semibold">{offer.code}</span>
+            </span>
+          )}
+        </Link>
+      )}
       <nav className="mx-auto max-w-page px-5 h-12 flex items-center justify-between text-[13px] text-ink">
         <Link href="/" className="flex items-center gap-1.5 font-semibold tracking-tight">
           <span className="text-ink">Phone</span>

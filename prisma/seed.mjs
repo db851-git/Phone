@@ -40,6 +40,18 @@ async function main() {
   }
   const count = await prisma.product.count();
   console.log(`✓ Seeded — ${count} products in the database.`);
+
+  // Trade-in buy-back models (only if none exist yet).
+  const tiCount = await prisma.tradeInModel.count();
+  if (tiCount === 0) {
+    const models = JSON.parse(
+      await readFile(join(__dirname, "..", "data", "tradein.json"), "utf8")
+    );
+    await prisma.tradeInModel.createMany({
+      data: models.map((m, i) => ({ ...m, sortOrder: i })),
+    });
+    console.log(`✓ Seeded — ${models.length} trade-in models.`);
+  }
 }
 
 main()

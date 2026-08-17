@@ -4,7 +4,7 @@ import AddToCart from "../../../components/AddToCart";
 import ProductCard from "../../../components/ProductCard";
 import Reveal from "../../../components/Reveal";
 import ProductGallery from "../../../components/ProductGallery";
-import { relatedProducts, specsFor, GRADE_INFO } from "../../../lib/products";
+import { relatedProducts, specsFor, GRADE_INFO, isOnSale, effectivePrice } from "../../../lib/products";
 import { getProducts, getProductById } from "../../../lib/catalog";
 import { gbp, rrp } from "../../../lib/format";
 
@@ -33,8 +33,11 @@ export default async function ProductPage({ params }) {
   const all = await getProducts();
   const grade = GRADE_INFO[product.grade];
   const specs = specsFor(product);
-  const was = rrp(product.price);
-  const saving = was - product.price;
+  const onSale = isOnSale(product);
+  const now = effectivePrice(product);
+  // When on sale, compare against the normal price; otherwise against est. RRP.
+  const was = onSale ? product.price : rrp(product.price);
+  const saving = was - now;
   const related = relatedProducts(product, all);
 
   return (
@@ -71,12 +74,12 @@ export default async function ProductPage({ params }) {
             </p>
 
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-[32px] font-semibold text-ink">{gbp(product.price)}</span>
+              <span className="text-[32px] font-semibold text-ink">{gbp(now)}</span>
               {saving > 0 && (
                 <>
                   <span className="text-[16px] text-ink-soft line-through">{gbp(was)}</span>
                   <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[12px] font-medium text-accent">
-                    Save {gbp(saving)}
+                    {onSale ? "Sale · save" : "Save"} {gbp(saving)}
                   </span>
                 </>
               )}
