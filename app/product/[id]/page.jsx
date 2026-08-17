@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ProductImage from "../../../components/ProductImage";
 import AddToCart from "../../../components/AddToCart";
 import ProductCard from "../../../components/ProductCard";
 import Reveal from "../../../components/Reveal";
+import ProductGallery from "../../../components/ProductGallery";
 import { relatedProducts, specsFor, GRADE_INFO } from "../../../lib/products";
 import { getProducts, getProductById } from "../../../lib/catalog";
 import { gbp, rrp } from "../../../lib/format";
@@ -51,9 +51,9 @@ export default async function ProductPage({ params }) {
         <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
           {/* visual */}
           <div className="md:sticky md:top-24">
-            <div className="relative flex items-center justify-center rounded-[32px] bg-chalk p-10 h-[420px] md:h-[520px]">
-              <ProductImage product={product} className="h-full w-auto drop-shadow-2xl" />
-              <span className="absolute top-5 left-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm">
+            <div className="relative">
+              <ProductGallery product={product} />
+              <span className="absolute top-5 left-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm">
                 <span className="w-2 h-2 rounded-full" style={{ background: grade.dot }} />
                 {grade.label}
               </span>
@@ -100,6 +100,16 @@ export default async function ProductPage({ params }) {
               <li className="flex items-center gap-2"><Dot /> 14-day returns</li>
               <li className="flex items-center gap-2"><Dot /> 100+ point tested</li>
             </ul>
+
+            {/* description */}
+            {product.description && (
+              <div className="mt-10">
+                <h2 className="text-[18px] font-semibold text-ink mb-3">Overview</h2>
+                <p className="text-[15px] text-ink-soft leading-relaxed whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
 
             {/* specs */}
             <div className="mt-10">

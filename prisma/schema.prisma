@@ -11,18 +11,32 @@ datasource db {
 }
 
 model Product {
-  id        String   @id
-  brand     String
-  name      String
-  storage   String
-  grade     String
-  price     Float
-  color     String
-  image     String   @default("")
-  tags      String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id
+  brand       String
+  name        String
+  storage     String
+  grade       String
+  price       Float
+  color       String
+  description String   @default("")
+  image       String   @default("") // primary thumbnail (mirrors images[0])
+  images      String[] @default([]) // full photo gallery
+  tags        String[] @default([])
+  featured    Boolean  @default(false)
+  stock       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([brand])
   @@index([grade])
+  @@index([featured])
+}
+
+// Uploaded photos, stored in the database so uploads work with no extra
+// storage service to configure. Served via GET /api/images/:id.
+model Image {
+  id          String   @id @default(cuid())
+  contentType String
+  data        Bytes
+  createdAt   DateTime @default(now())
 }

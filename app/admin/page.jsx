@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProductImage from "../../components/ProductImage";
+import ImageUploader from "../../components/ImageUploader";
 import { BRANDS } from "../../lib/products";
 import { gbp } from "../../lib/format";
 
@@ -18,8 +19,11 @@ const BLANK = {
   grade: "A",
   price: 0,
   color: "",
+  description: "",
   tags: [],
-  image: "",
+  images: [],
+  featured: false,
+  stock: 1,
 };
 
 export default function AdminPage() {
@@ -232,7 +236,13 @@ export default function AdminPage() {
                         <ProductImage product={p} className="h-9 w-auto" />
                       </span>
                       <div>
-                        <p className="font-medium text-ink">{p.name}</p>
+                        <p className="font-medium text-ink flex items-center gap-1.5">
+                          {p.name}
+                          {p.featured && <span className="text-accent" title="Featured">★</span>}
+                          {(p.images?.length > 0) && (
+                            <span className="text-ink-soft text-[11px]">· {p.images.length} 📷</span>
+                          )}
+                        </p>
                         <p className="text-ink-soft">{p.brand} · {p.color}</p>
                       </div>
                     </div>
@@ -345,6 +355,9 @@ function EditModal({ product, onClose, onSave }) {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          <Field label="Photos" className="col-span-2">
+            <ImageUploader value={form.images || []} onChange={(images) => set("images", images)} />
+          </Field>
           <Field label="Name" className="col-span-2">
             <input value={form.name} onChange={(e) => set("name", e.target.value)} className={inputCls} placeholder="iPhone 15 Pro" />
           </Field>
@@ -369,8 +382,26 @@ function EditModal({ product, onClose, onSave }) {
           <Field label="Price (£)">
             <input type="number" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className={inputCls} />
           </Field>
-          <Field label="Image URL (optional)">
-            <input value={form.image || ""} onChange={(e) => set("image", e.target.value)} className={inputCls} placeholder="/images/ip15pro.jpg" />
+          <Field label="Stock (units)">
+            <input type="number" min="0" value={form.stock ?? 1} onChange={(e) => set("stock", e.target.value)} className={inputCls} />
+          </Field>
+          <label className="flex items-center gap-2 self-end pb-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.featured}
+              onChange={(e) => set("featured", e.target.checked)}
+              className="w-4 h-4 accent-accent"
+            />
+            <span className="text-[13px] text-ink">Feature on homepage</span>
+          </label>
+          <Field label="Description" className="col-span-2">
+            <textarea
+              value={form.description || ""}
+              onChange={(e) => set("description", e.target.value)}
+              rows={4}
+              className={`${inputCls} resize-y`}
+              placeholder="Condition notes, what's included, standout features…"
+            />
           </Field>
           <Field label="Tags" className="col-span-2">
             <div className="flex flex-wrap gap-2">

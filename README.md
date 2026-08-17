@@ -15,10 +15,13 @@ smooth, tasteful scroll animations.
 - **About** page explaining grading, warranty and the store
 - **Database-backed catalog** (PostgreSQL via Prisma) — the source of truth for
   the whole storefront, with automatic fallback to the seed JSON when no DB is set
-- **Admin stock manager** at `/admin` — password-gated; add/edit/delete products
-  and import/export JSON, changes go live for all visitors
-- **REST API**: public `GET /api/products` + protected create/update/delete
-- **Real-photo support** with automatic SVG fallback (`components/ProductImage.jsx`)
+- **Admin stock manager** at `/admin` — password-gated; add/edit/delete products,
+  drag-and-drop **photo uploads** (multiple per phone, auto-compressed), rich
+  **descriptions**, a **featured** toggle for the homepage, stock counts, and
+  JSON import/export. Changes go live for all visitors.
+- **REST API**: public `GET /api/products`, protected create/update/delete, and
+  image upload/serve endpoints (photos stored in the database — no S3 to set up)
+- **Product galleries** on the PDP with an SVG fallback when a phone has no photos
 - Fully responsive, keyboard-friendly, and respects `prefers-reduced-motion`
 
 The catalog lives in a **Postgres database** in production. `data/products.json`

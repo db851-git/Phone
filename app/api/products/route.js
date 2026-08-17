@@ -36,6 +36,7 @@ export async function POST(request) {
     return Response.json({ error: "Name and colour are required." }, { status: 400 });
 
   const id = body.id || slugify(body);
+  const images = Array.isArray(body.images) ? body.images.filter(Boolean) : [];
   const data = {
     id,
     brand: body.brand || "Apple",
@@ -44,8 +45,12 @@ export async function POST(request) {
     grade: body.grade || "A",
     price: Number(body.price) || 0,
     color: body.color,
-    image: body.image || "",
+    description: body.description || "",
+    images,
+    image: images[0] || body.image || "",
     tags: Array.isArray(body.tags) ? body.tags : [],
+    featured: Boolean(body.featured),
+    stock: Number.isFinite(Number(body.stock)) ? Number(body.stock) : 1,
   };
 
   try {

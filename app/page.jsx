@@ -30,7 +30,9 @@ const TRUST = [
 export default async function Home() {
   const all = await getProducts();
   const byId = (id) => all.find((p) => p.id === id);
-  const featured = FEATURED.map(byId).filter(Boolean);
+  // Admin-flagged products drive the homepage; fall back to the curated list.
+  const flagged = all.filter((p) => p.featured);
+  const featured = (flagged.length >= 4 ? flagged : FEATURED.map(byId).filter(Boolean)).slice(0, 8);
   const iphone = byId("ip16pm-256-aplus") || all.find((p) => p.brand === "Apple");
   const samsung = byId("sgs25u-256-a") || all.find((p) => p.brand === "Samsung");
   const hero = byId("ip17pm-512-new") || all[0];

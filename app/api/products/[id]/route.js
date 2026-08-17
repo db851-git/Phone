@@ -25,6 +25,7 @@ export async function PUT(request, { params }) {
   const body = await request.json().catch(() => null);
   if (!body) return Response.json({ error: "Invalid body" }, { status: 400 });
 
+  const images = Array.isArray(body.images) ? body.images.filter(Boolean) : [];
   const data = {
     brand: body.brand,
     name: body.name,
@@ -32,8 +33,12 @@ export async function PUT(request, { params }) {
     grade: body.grade,
     price: Number(body.price) || 0,
     color: body.color,
-    image: body.image || "",
+    description: body.description || "",
+    images,
+    image: images[0] || body.image || "",
     tags: Array.isArray(body.tags) ? body.tags : [],
+    featured: Boolean(body.featured),
+    stock: Number.isFinite(Number(body.stock)) ? Number(body.stock) : 1,
   };
 
   try {
