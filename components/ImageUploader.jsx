@@ -1,43 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-
-// Reads a File, downsizes it on a canvas and returns a compressed JPEG data URL.
-// Keeps uploads small (~100–400KB) so DB-stored photos stay lean.
-function compress(file, maxDim = 1400, quality = 0.82) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          const scale = maxDim / Math.max(width, height);
-          width = Math.round(width * scale);
-          height = Math.round(height * scale);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
+import { prepareImage } from "../lib/imagePrep";
 
 export default function ImageUploader({ value = [], onChange }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [cutout, setCutout] = useState(true); // auto-remove background
 
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
@@ -45,9 +17,15 @@ export default function ImageUploader({ value = [], onChange }) {
     setBusy(true);
     setError("");
     const added = [];
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
       try {
-        const dataUrl = await compress(file);
+        setStatus(
+          cutout
+            ? `Removing background… (${i + 1}/${files.length})`
+            : `Processing… (${i + 1}/${files.length})`
+        );
+        const { dataUrl } = await prepareImage(files[i], { removeBackground: cutout });
+        setStatus(`Uploading… (${i + 1}/${files.length})`);
         const res = await fetch("/api/images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -62,6 +40,7 @@ export default function ImageUploader({ value = [], onChange }) {
     }
     if (added.length) onChange([...value, ...added]);
     setBusy(false);
+    setStatus("");
   };
 
   const removeAt = (i) => onChange(value.filter((_, idx) => idx !== i));
@@ -75,34 +54,25 @@ export default function ImageUploader({ value = [], onChange }) {
 
   return (
     <div>
+      <label className="flex items-center gap-2 mb-2 cursor-pointer">
+        <input type="checkbox" checked={cutout} onChange={(e) => setCutout(e.target.checked)} className="w-4 h-4 accent-accent" />
+        <span className="text-[13px] text-ink">Auto-remove background &amp; fit</span>
+      </label>
+
       <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
+        onClick={() => !busy && inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          handleFiles(e.dataTransfer.files);
-        }}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
-          dragOver ? "border-accent bg-accent/5" : "border-black/15 hover:border-ink"
-        }`}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!busy) handleFiles(e.dataTransfer.files); }}
+        className={`rounded-2xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
+          busy ? "opacity-70 cursor-wait" : "cursor-pointer"
+        } ${dragOver ? "border-accent bg-accent/5" : "border-black/15 hover:border-ink"}`}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-        <p className="text-[14px] text-ink">
-          {busy ? "Uploading…" : "Drag photos here or click to upload"}
+        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+        <p className="text-[14px] text-ink">{busy ? status || "Working…" : "Drag photos here or click to upload"}</p>
+        <p className="text-[12px] text-ink-soft mt-0.5">
+          {busy ? "First background removal loads a one-off model — give it a few seconds." : "JPG / PNG · any size · multiple allowed"}
         </p>
-        <p className="text-[12px] text-ink-soft mt-0.5">JPG / PNG · multiple allowed</p>
       </div>
 
       {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
@@ -112,30 +82,15 @@ export default function ImageUploader({ value = [], onChange }) {
           {value.map((url, i) => (
             <div key={url + i} className="relative group aspect-square rounded-xl overflow-hidden bg-chalk border border-black/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <img src={url} alt="" className="w-full h-full object-contain p-1.5" />
               {i === 0 && (
-                <span className="absolute top-1 left-1 rounded-full bg-accent text-white text-[9px] px-1.5 py-0.5">
-                  Primary
-                </span>
+                <span className="absolute top-1 left-1 rounded-full bg-accent text-white text-[9px] px-1.5 py-0.5">Primary</span>
               )}
               <div className="absolute inset-0 flex items-end justify-between p-1 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                 {i !== 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => makePrimary(i)}
-                    className="text-white text-[10px] bg-black/50 rounded px-1.5 py-0.5"
-                  >
-                    Make primary
-                  </button>
+                  <button type="button" onClick={() => makePrimary(i)} className="text-white text-[10px] bg-black/50 rounded px-1.5 py-0.5">Make primary</button>
                 ) : <span />}
-                <button
-                  type="button"
-                  onClick={() => removeAt(i)}
-                  className="text-white text-[11px] bg-black/50 rounded px-1.5 py-0.5"
-                  aria-label="Remove"
-                >
-                  ✕
-                </button>
+                <button type="button" onClick={() => removeAt(i)} className="text-white text-[11px] bg-black/50 rounded px-1.5 py-0.5" aria-label="Remove">✕</button>
               </div>
             </div>
           ))}

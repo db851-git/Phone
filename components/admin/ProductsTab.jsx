@@ -211,8 +211,8 @@ function EditModal({ product, dbEnabled, onClose, onSave }) {
             <input type="checkbox" checked={!!form.featured} onChange={(e) => set("featured", e.target.checked)} className="w-4 h-4 accent-accent" />
             <span className="text-[13px] text-ink">Feature on homepage</span>
           </label>
-          <Field label="Description" className="col-span-2">
-            <textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={4} className={`${inputCls} resize-y`} placeholder="Condition notes, what's included, standout features…" />
+          <Field label="Description — supports Markdown (tables, lists, **bold**)" className="col-span-2">
+            <textarea value={form.description || ""} onChange={(e) => set("description", e.target.value)} rows={5} className={`${inputCls} resize-y font-mono text-[13px]`} placeholder={"Immaculate condition, includes cable & 24-month warranty.\n\n| Feature | Detail |\n| --- | --- |\n| Display | 6.3\" OLED |\n| Battery | 90%+ |"} />
           </Field>
           <Field label="Tags" className="col-span-2">
             <div className="flex flex-wrap gap-2">

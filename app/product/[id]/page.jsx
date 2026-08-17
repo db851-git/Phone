@@ -4,6 +4,7 @@ import AddToCart from "../../../components/AddToCart";
 import ProductCard from "../../../components/ProductCard";
 import Reveal from "../../../components/Reveal";
 import ProductGallery from "../../../components/ProductGallery";
+import Markdown from "../../../components/Markdown";
 import { relatedProducts, specsFor, GRADE_INFO, isOnSale, effectivePrice } from "../../../lib/products";
 import { getProducts, getProductById } from "../../../lib/catalog";
 import { gbp, rrp } from "../../../lib/format";
@@ -108,9 +109,7 @@ export default async function ProductPage({ params }) {
             {product.description && (
               <div className="mt-10">
                 <h2 className="text-[18px] font-semibold text-ink mb-3">Overview</h2>
-                <p className="text-[15px] text-ink-soft leading-relaxed whitespace-pre-line">
-                  {product.description}
-                </p>
+                <Markdown>{product.description}</Markdown>
               </div>
             )}
 
