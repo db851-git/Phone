@@ -3,14 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProductImage from "../../components/ProductImage";
-import catalog from "../../data/products.json";
 import { BRANDS } from "../../lib/products";
 import { gbp } from "../../lib/format";
 
 const GRADES = ["New", "A+", "A", "B+", "B", "C"];
 const STORAGES = ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"];
 const ALL_TAGS = ["flagship", "new", "deal", "budget", "compact"];
-const LS_KEY = "phonepro-admin-catalog-v1";
 
 const BLANK = {
   id: "",
@@ -24,38 +22,39 @@ const BLANK = {
   image: "",
 };
 
-function slugify(p) {
-  return [p.name, p.storage, p.grade, p.color]
-    .join("-")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 40);
-}
-
 export default function AdminPage() {
-  const [items, setItems] = useState(catalog);
-  const [editing, setEditing] = useState(null); // product object or null
+  const [session, setSession] = useState(null); // {authed, dbEnabled, defaultPassword}
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
   const [query, setQuery] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState("");
   const fileRef = useRef(null);
 
-  // Load any in-progress edits from a previous session.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  const persist = (next) => {
-    setItems(next);
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(next));
-    } catch {}
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+  const flash = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2000);
   };
+
+  const loadSession = async () => {
+    const s = await fetch("/api/admin/session").then((r) => r.json());
+    setSession(s);
+    return s;
+  };
+
+  const loadItems = async () => {
+    setLoading(true);
+    const data = await fetch("/api/products").then((r) => r.json());
+    setItems(Array.isArray(data) ? data : []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    (async () => {
+      await loadSession();
+      await loadItems();
+    })();
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query) return items;
@@ -70,24 +69,38 @@ export default function AdminPage() {
     return { count: items.length, value };
   }, [items]);
 
-  const upsert = (product) => {
-    const id = product.id || slugify(product);
-    const clean = { ...product, id, price: Number(product.price) || 0 };
-    const exists = items.some((p) => p.id === id);
-    const next = exists
-      ? items.map((p) => (p.id === id ? clean : p))
-      : [clean, ...items];
-    persist(next);
+  const save = async (product) => {
+    const isNew = !items.some((p) => p.id === product.id) || !product.id;
+    const url = isNew ? "/api/products" : `/api/products/${product.id}`;
+    const method = isNew ? "POST" : "PUT";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      flash(err.error || "Save failed");
+      return;
+    }
     setEditing(null);
+    await loadItems();
+    flash(isNew ? "Product added" : "Changes saved");
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (!confirm("Remove this product from the catalog?")) return;
-    persist(items.filter((p) => p.id !== id));
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    if (!res.ok) return flash("Delete failed");
+    await loadItems();
+    flash("Product removed");
   };
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+    const clean = items.map(({ id, brand, name, storage, grade, price, color, image, tags }) => ({
+      id, brand, name, storage, grade, price, color, image: image || "", tags: tags || [],
+    }));
+    const blob = new Blob([JSON.stringify(clean, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -100,26 +113,40 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
+      let data;
       try {
-        const data = JSON.parse(String(reader.result));
-        if (Array.isArray(data)) persist(data);
-        else alert("That file isn't a product array.");
+        data = JSON.parse(String(reader.result));
       } catch {
-        alert("Couldn't parse that JSON file.");
+        return flash("Couldn't parse that JSON");
       }
+      if (!Array.isArray(data)) return flash("File isn't a product array");
+      if (!confirm(`Import ${data.length} products into the database?`)) return;
+      let ok = 0;
+      for (const p of data) {
+        const res = await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(p),
+        });
+        if (res.ok) ok++;
+      }
+      await loadItems();
+      flash(`Imported ${ok}/${data.length}`);
     };
     reader.readAsText(file);
     e.target.value = "";
   };
 
-  const resetToLive = () => {
-    if (!confirm("Discard local edits and reload the shipped catalog?")) return;
-    try {
-      localStorage.removeItem(LS_KEY);
-    } catch {}
-    setItems(catalog);
+  const logout = async () => {
+    await fetch("/api/admin/login", { method: "DELETE" });
+    await loadSession();
   };
+
+  // —— gate ——
+  if (session && !session.authed) {
+    return <LoginGate session={session} onDone={loadSession} />;
+  }
 
   return (
     <div className="mx-auto max-w-page px-5 pt-24 pb-20 min-h-screen">
@@ -130,7 +157,6 @@ export default function AdminPage() {
           <h1 className="display text-[32px] md:text-[44px] font-semibold text-ink">Stock manager</h1>
           <p className="mt-1 text-[14px] text-ink-soft">
             {stats.count} products · catalog value {gbp(stats.value)}
-            {saved && <span className="ml-2 text-green-600">✓ saved locally</span>}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -144,18 +170,32 @@ export default function AdminPage() {
             Import
           </button>
           <input ref={fileRef} type="file" accept="application/json" onChange={onImport} className="hidden" />
-          <button onClick={resetToLive} className="rounded-full border border-black/15 px-4 py-2 text-[14px] text-ink-soft hover:border-ink">
-            Reset
+          <button onClick={logout} className="rounded-full border border-black/15 px-4 py-2 text-[14px] text-ink-soft hover:border-ink">
+            Log out
           </button>
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl bg-chalk p-4 text-[13px] text-ink-soft">
-        Edits are saved in your browser as you work. To publish them to the live
-        site, click <span className="font-medium text-ink">Export JSON</span> and commit the
-        downloaded file to <code className="text-ink">data/products.json</code>.
-        <Link href="/shop" className="ml-1 text-accent hover:underline">View storefront →</Link>
-      </div>
+      {/* status banners */}
+      {session && !session.dbEnabled && (
+        <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-[13px] text-amber-800">
+          <span className="font-medium">Preview mode —</span> no database is connected, so edits
+          won&rsquo;t save. Set <code>DATABASE_URL</code> (see DEPLOY.md) to go live. You can still
+          browse the seeded catalog and export JSON.
+        </div>
+      )}
+      {session?.dbEnabled && session?.defaultPassword && (
+        <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-[13px] text-amber-800">
+          <span className="font-medium">Heads up —</span> you&rsquo;re using the default admin
+          password. Set <code>ADMIN_PASSWORD</code> in your environment to secure the stock manager.
+        </div>
+      )}
+      {session?.dbEnabled && (
+        <div className="mt-4 rounded-2xl bg-chalk p-4 text-[13px] text-ink-soft">
+          Changes save to the database and go live within a minute.
+          <Link href="/shop" className="ml-1 text-accent hover:underline">View storefront →</Link>
+        </div>
+      )}
 
       {/* search */}
       <input
@@ -179,51 +219,106 @@ export default function AdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5">
-            {filtered.map((p) => (
-              <tr key={p.id} className="hover:bg-chalk/60">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-11 rounded-lg bg-chalk flex items-center justify-center shrink-0">
-                      <ProductImage product={p} className="h-9 w-auto" />
-                    </span>
-                    <div>
-                      <p className="font-medium text-ink">{p.name}</p>
-                      <p className="text-ink-soft">{p.brand} · {p.color}</p>
+            {loading ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-ink-soft">Loading…</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-ink-soft">No products match “{query}”.</td></tr>
+            ) : (
+              filtered.map((p) => (
+                <tr key={p.id} className="hover:bg-chalk/60">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-9 h-11 rounded-lg bg-chalk flex items-center justify-center shrink-0">
+                        <ProductImage product={p} className="h-9 w-auto" />
+                      </span>
+                      <div>
+                        <p className="font-medium text-ink">{p.name}</p>
+                        <p className="text-ink-soft">{p.brand} · {p.color}</p>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{p.storage}</td>
-                <td className="px-4 py-3 text-ink-soft">{p.grade === "New" ? "New" : `Grade ${p.grade}`}</td>
-                <td className="px-4 py-3 text-ink">{gbp(p.price)}</td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <button onClick={() => setEditing(p)} className="text-accent hover:underline">Edit</button>
-                  <span className="mx-2 text-black/15">|</span>
-                  <button onClick={() => remove(p.id)} className="text-ink-soft hover:text-red-600">Delete</button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-ink-soft">No products match “{query}”.</td>
-              </tr>
+                  </td>
+                  <td className="px-4 py-3 text-ink-soft">{p.storage}</td>
+                  <td className="px-4 py-3 text-ink-soft">{p.grade === "New" ? "New" : `Grade ${p.grade}`}</td>
+                  <td className="px-4 py-3 text-ink">{gbp(p.price)}</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <button onClick={() => setEditing(p)} className="text-accent hover:underline">Edit</button>
+                    <span className="mx-2 text-black/15">|</span>
+                    <button onClick={() => remove(p.id)} className="text-ink-soft hover:text-red-600">Delete</button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
-      {editing && (
-        <EditModal
-          product={editing}
-          onClose={() => setEditing(null)}
-          onSave={upsert}
-        />
+      {editing && <EditModal product={editing} onClose={() => setEditing(null)} onSave={save} />}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] rounded-full bg-ink text-white text-[13px] px-4 py-2 shadow-lg">
+          {toast}
+        </div>
       )}
+    </div>
+  );
+}
+
+function LoginGate({ session, onDone }) {
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw }),
+    });
+    setBusy(false);
+    if (res.ok) onDone();
+    else setErr("Incorrect password");
+  };
+
+  return (
+    <div className="mx-auto max-w-sm px-5 pt-40 pb-24 min-h-[70vh]">
+      <p className="text-[12px] uppercase tracking-[0.18em] text-accent text-center">Staff area</p>
+      <h1 className="display text-[30px] font-semibold text-ink text-center mt-2">Stock manager</h1>
+      <form onSubmit={submit} className="mt-8 rounded-3xl bg-chalk p-6">
+        <label className="block text-[13px] text-ink-soft mb-1">Password</label>
+        <input
+          type="password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          autoFocus
+          className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[14px] outline-none focus:border-accent"
+        />
+        {err && <p className="mt-2 text-[13px] text-red-600">{err}</p>}
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-4 w-full rounded-full bg-accent px-5 py-3 text-[15px] font-medium text-white hover:bg-accent-hover disabled:opacity-40"
+        >
+          {busy ? "Checking…" : "Sign in"}
+        </button>
+        {session?.defaultPassword && (
+          <p className="mt-3 text-center text-[12px] text-ink-soft">
+            Demo password: <code className="text-ink">phonepro</code>
+          </p>
+        )}
+      </form>
+      <Link href="/" className="mt-6 block text-center text-[13px] text-accent hover:underline">
+        ← Back to store
+      </Link>
     </div>
   );
 }
 
 function EditModal({ product, onClose, onSave }) {
   const [form, setForm] = useState(product);
+  const [saving, setSaving] = useState(false);
   const isNew = !product.id;
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const toggleTag = (t) =>
@@ -231,6 +326,12 @@ function EditModal({ product, onClose, onSave }) {
       ...f,
       tags: f.tags?.includes(t) ? f.tags.filter((x) => x !== t) : [...(f.tags || []), t],
     }));
+
+  const submit = async () => {
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-5" onClick={onClose}>
@@ -291,11 +392,11 @@ function EditModal({ product, onClose, onSave }) {
 
         <div className="mt-6 flex gap-3">
           <button
-            onClick={() => onSave(form)}
-            disabled={!form.name || !form.color}
+            onClick={submit}
+            disabled={!form.name || !form.color || saving}
             className="flex-1 rounded-full bg-accent px-5 py-3 text-[15px] font-medium text-white hover:bg-accent-hover disabled:opacity-40"
           >
-            {isNew ? "Add to catalog" : "Save changes"}
+            {saving ? "Saving…" : isNew ? "Add to catalog" : "Save changes"}
           </button>
           <button onClick={onClose} className="rounded-full border border-black/15 px-5 py-3 text-[15px] text-ink hover:border-ink">
             Cancel

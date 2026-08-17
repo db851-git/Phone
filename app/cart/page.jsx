@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../components/CartProvider";
 import ProductImage from "../../components/ProductImage";
-import { getProduct, GRADE_INFO } from "../../lib/products";
+import { GRADE_INFO } from "../../lib/products";
 import { gbp } from "../../lib/format";
 
 export default function CartPage() {
@@ -31,7 +31,7 @@ export default function CartPage() {
           <div className="divide-y divide-black/5 border-y border-black/5">
             <AnimatePresence initial={false}>
               {items.map((item) => {
-                const full = getProduct(item.id) || item;
+                const full = item;
                 const grade = GRADE_INFO[item.grade];
                 return (
                   <motion.div

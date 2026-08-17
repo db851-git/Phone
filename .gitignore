@@ -22,6 +22,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# prisma generated client
+/lib/generated
+/prisma/generated
+
 # editor
 .vscode
 .idea

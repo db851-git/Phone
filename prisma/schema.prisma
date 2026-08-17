@@ -1,0 +1,28 @@
+// PhonePro database schema.
+// Postgres in production (Vercel Postgres / Neon / Supabase) via DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id        String   @id
+  brand     String
+  name      String
+  storage   String
+  grade     String
+  price     Float
+  color     String
+  image     String   @default("")
+  tags      String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brand])
+  @@index([grade])
+}

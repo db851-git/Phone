@@ -4,15 +4,21 @@ import ProductImage from "../../../components/ProductImage";
 import AddToCart from "../../../components/AddToCart";
 import ProductCard from "../../../components/ProductCard";
 import Reveal from "../../../components/Reveal";
-import { products, getProduct, relatedProducts, specsFor, GRADE_INFO } from "../../../lib/products";
+import { relatedProducts, specsFor, GRADE_INFO } from "../../../lib/products";
+import { getProducts, getProductById } from "../../../lib/catalog";
 import { gbp, rrp } from "../../../lib/format";
 
-export function generateStaticParams() {
+// Pre-render known products; new ones (added via /admin) render on demand.
+export const revalidate = 60;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const products = await getProducts();
   return products.map((p) => ({ id: p.id }));
 }
 
-export function generateMetadata({ params }) {
-  const p = getProduct(params.id);
+export async function generateMetadata({ params }) {
+  const p = await getProductById(params.id);
   if (!p) return { title: "Not found — PhonePro" };
   return {
     title: `${p.name} ${p.storage} — PhonePro`,
@@ -20,15 +26,16 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function ProductPage({ params }) {
-  const product = getProduct(params.id);
+export default async function ProductPage({ params }) {
+  const product = await getProductById(params.id);
   if (!product) notFound();
 
+  const all = await getProducts();
   const grade = GRADE_INFO[product.grade];
   const specs = specsFor(product);
   const was = rrp(product.price);
   const saving = was - product.price;
-  const related = relatedProducts(product);
+  const related = relatedProducts(product, all);
 
   return (
     <>

@@ -1,7 +1,31 @@
 # Deploying PhonePro
 
-The site is a standard Next.js 14 app. Pick whichever host suits you — Vercel is
-the fastest path, Docker is best if you want to self-host.
+The site is a standard Next.js 14 app backed by a PostgreSQL database (via
+Prisma). Pick whichever host suits you — Vercel is the fastest path, Docker is
+best if you want to self-host.
+
+> **No database yet?** The site still runs — it falls back to `data/products.json`
+> in read-only "preview mode". Add a database when you want live stock editing.
+
+---
+
+## Database setup (do this once)
+
+1. **Create a free Postgres database.** Any of these work:
+   - **Vercel Postgres** (Storage tab in your Vercel project) — easiest with Vercel
+   - **Neon** (neon.tech) or **Supabase** (supabase.com) — free tiers, copy the connection string
+2. **Set environment variables** on your host:
+   - `DATABASE_URL` — the Postgres connection string
+   - `ADMIN_PASSWORD` — the password for the `/admin` stock manager
+3. **Create the tables and seed them** (run locally once, pointing at the DB, or
+   from your host's shell):
+   ```bash
+   npm run db:push     # create the tables from prisma/schema.prisma
+   npm run db:seed     # load the starter catalog from data/products.json
+   ```
+
+That's it — the storefront now reads from the database, and edits in `/admin`
+go live for everyone.
 
 ---
 
@@ -12,14 +36,17 @@ Vercel is made by the Next.js team and needs zero configuration.
 1. Push this repo to GitHub (already done on your branch).
 2. Go to **vercel.com → Add New → Project** and import the `Phone` repo.
 3. Framework preset is auto-detected as **Next.js**. Leave every setting default.
-4. Click **Deploy**.
+4. Add environment variables under **Settings → Environment Variables**:
+   `DATABASE_URL` and `ADMIN_PASSWORD` (see *Database setup* above).
+5. Click **Deploy**, then run the one-time seed (`npm run db:push && npm run db:seed`
+   locally against the same `DATABASE_URL`).
 
 You'll get a live URL like `phonepro.vercel.app` in about a minute. Every future
 `git push` redeploys automatically. To use your own domain, add it under
 **Project → Settings → Domains**.
 
-> No environment variables are required — the catalog is read from
-> `data/products.json` at build time.
+> Skip the env vars to deploy in preview mode first — the site runs from the seed
+> JSON until you connect a database.
 
 ---
 

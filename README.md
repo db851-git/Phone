@@ -13,15 +13,30 @@ smooth, tasteful scroll animations.
 - **Checkout** — a working multi-step order form with confirmation (demo, no real payment)
 - **Sell / Trade-In** with an instant quote estimator (model × storage × condition)
 - **About** page explaining grading, warranty and the store
-- **Admin stock manager** at `/admin` — add/edit/delete products, import/export JSON
-- **`/api/products`** endpoint serving the live catalog as JSON
+- **Database-backed catalog** (PostgreSQL via Prisma) — the source of truth for
+  the whole storefront, with automatic fallback to the seed JSON when no DB is set
+- **Admin stock manager** at `/admin` — password-gated; add/edit/delete products
+  and import/export JSON, changes go live for all visitors
+- **REST API**: public `GET /api/products` + protected create/update/delete
 - **Real-photo support** with automatic SVG fallback (`components/ProductImage.jsx`)
 - Fully responsive, keyboard-friendly, and respects `prefers-reduced-motion`
 
-Inventory lives in `data/products.json` (seeded with real models, grades and
-prices from the PhonePro shop window). Manage it from `/admin`, or swap it for a
-CMS / database when you're ready. See **DEPLOY.md** to go live and
+The catalog lives in a **Postgres database** in production. `data/products.json`
+is the starter seed (real models, grades and prices from the PhonePro shop window)
+and the read-only fallback when `DATABASE_URL` isn't set. Manage stock from
+`/admin`. See **DEPLOY.md** for database + hosting setup and
 **public/images/README.md** to add real photos.
+
+## Environment
+
+Copy `.env.example` to `.env.local`:
+
+```
+DATABASE_URL=postgresql://…      # Postgres (Vercel Postgres / Neon / Supabase)
+ADMIN_PASSWORD=your-password     # gate for /admin (defaults to "phonepro")
+```
+
+Then: `npm run db:push` (create tables) and `npm run db:seed` (load the catalog).
 
 ## Getting started
 
@@ -39,25 +54,30 @@ npm run start
 
 ## Tech
 
-| Area        | Choice                     |
-| ----------- | -------------------------- |
-| Framework   | Next.js 14 (App Router)    |
-| Styling     | Tailwind CSS               |
-| Animation   | Framer Motion              |
-| State       | React Context + localStorage |
+| Area        | Choice                       |
+| ----------- | ---------------------------- |
+| Framework   | Next.js 14 (App Router)      |
+| Styling     | Tailwind CSS                 |
+| Animation   | Framer Motion                |
+| Database    | PostgreSQL + Prisma          |
+| Cart state  | React Context + localStorage |
 
 ## Project structure
 
 ```
-app/            routes (home, shop, product, cart, checkout, sell, about)
+app/            routes (home, shop, product, cart, checkout, sell, about, admin)
+app/api/        products CRUD + admin login/session route handlers
 components/     Nav, Footer, ProductCard, PhoneVisual, CartProvider, …
-lib/            products data + formatting helpers
+lib/            catalog (DB), products (helpers/seed), db, auth, format
+prisma/         schema.prisma + seed script
+data/           products.json (starter seed / fallback)
 ```
 
 ## Notes
 
-- Product imagery is rendered as crisp inline SVG (`components/PhoneVisual.jsx`),
-  so there are no external image assets to manage. Drop in real photos later by
-  swapping that component for `<Image>`.
-- Checkout and trade-in are front-end demos — wire them to Stripe and a backend
-  to go fully live.
+- Product imagery is rendered as crisp inline SVG (`components/PhoneVisual.jsx`)
+  by default; add real photos any time (see `public/images/README.md`).
+- The storefront reads from the database; `/admin` edits go live within ~60s
+  (ISR). Without `DATABASE_URL` the site serves the seed JSON read-only.
+- Checkout is a front-end demo — payment integration (Stripe) is the planned
+  next step.

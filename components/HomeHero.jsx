@@ -4,12 +4,10 @@ import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import ProductImage from "./ProductImage";
-import { getProduct } from "../lib/products";
 import { gbp } from "../lib/format";
 
-export default function HomeHero() {
+export default function HomeHero({ hero }) {
   const ref = useRef(null);
-  const hero = getProduct("ip17pm-512-new");
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -78,7 +76,9 @@ export default function HomeHero() {
             transition={{ duration: 0.7, delay: 0.5 }}
             className="absolute -right-4 top-8 md:right-10 rounded-2xl bg-white/90 backdrop-blur px-4 py-3 shadow-lg text-left"
           >
-            <p className="text-[11px] text-ink-soft">iPhone 17 Pro Max · New</p>
+            <p className="text-[11px] text-ink-soft">
+              {hero.name} · {hero.grade === "New" ? "New" : `Grade ${hero.grade}`}
+            </p>
             <p className="text-[18px] font-semibold text-ink">{gbp(hero.price)}</p>
           </motion.div>
         </div>
