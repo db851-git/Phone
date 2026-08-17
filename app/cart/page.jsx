@@ -42,8 +42,8 @@ export default function CartPage() {
                     exit={{ opacity: 0, height: 0 }}
                     className="flex gap-4 py-5"
                   >
-                    <Link href={`/product/${item.id}`} className="shrink-0 w-24 h-28 rounded-2xl bg-chalk flex items-center justify-center">
-                      <ProductImage product={full} className="h-24 w-auto" />
+                    <Link href={`/product/${item.id}`} className="shrink-0 w-24 h-28 rounded-2xl bg-chalk overflow-hidden p-2.5 block">
+                      <ProductImage product={full} className="w-full h-full" />
                     </Link>
                     <div className="flex-1">
                       <div className="flex justify-between gap-4">

@@ -12,15 +12,15 @@ export default function ProductGallery({ product }) {
 
   if (images.length === 0) {
     return (
-      <div className="relative flex items-center justify-center rounded-[32px] bg-chalk p-10 h-[420px] md:h-[520px]">
-        <ProductImage product={product} className="h-full w-auto drop-shadow-2xl" />
+      <div className="relative rounded-[32px] bg-chalk overflow-hidden aspect-[4/5] p-10">
+        <ProductImage product={product} className="w-full h-full drop-shadow-2xl" />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="relative flex items-center justify-center rounded-[32px] bg-chalk overflow-hidden h-[420px] md:h-[520px]">
+      <div className="relative rounded-[32px] bg-chalk overflow-hidden aspect-[4/5]">
         <AnimatePresence mode="wait">
           <motion.img
             key={images[active]}
@@ -30,7 +30,7 @@ export default function ProductGallery({ product }) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full h-full object-contain p-6"
+            className="absolute inset-0 w-full h-full object-contain p-8"
           />
         </AnimatePresence>
       </div>

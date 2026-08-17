@@ -17,15 +17,24 @@ best if you want to self-host.
 2. **Set environment variables** on your host:
    - `DATABASE_URL` — the Postgres connection string
    - `ADMIN_PASSWORD` — the password for the `/admin` stock manager
-3. **Create the tables and seed them** (run locally once, pointing at the DB, or
-   from your host's shell):
+3. **Tables are created automatically on deploy.** The build runs
+   `scripts/db-setup.mjs`, which syncs the schema and seeds an empty catalog —
+   so you normally don't run any Prisma commands by hand. Just make sure
+   `DATABASE_URL` is set for the **Production** environment, then deploy.
+
+   To do it manually instead (or to re-seed locally):
    ```bash
    npm run db:push     # create the tables from prisma/schema.prisma
-   npm run db:seed     # load the starter catalog from data/products.json
+   npm run db:seed     # load the starter catalog + trade-in models
    ```
 
-That's it — the storefront now reads from the database, and edits in `/admin`
-go live for everyone.
+That's it — the storefront reads from the database, and edits in `/admin` go
+live for everyone.
+
+> **Neon tip:** schema creation (DDL) needs a *direct* connection. The build
+> derives it automatically by removing `-pooler` from your `DATABASE_URL`. If
+> your setup uses a separate direct endpoint, set `DIRECT_URL` and it'll be used
+> for schema sync while `DATABASE_URL` (pooled) serves runtime traffic.
 
 ---
 

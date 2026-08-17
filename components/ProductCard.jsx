@@ -19,22 +19,24 @@ export default function ProductCard({ product, index = 0 }) {
         href={`/product/${product.id}`}
         className="group block rounded-3xl bg-white p-6 transition-all duration-300 hover:shadow-[0_18px_50px_-20px_rgba(0,0,0,0.25)] hover:-translate-y-1"
       >
-        <div className="relative flex items-center justify-center h-52 rounded-2xl bg-chalk overflow-hidden">
+        <div className="relative aspect-[4/5] rounded-2xl bg-chalk overflow-hidden">
           <span
-            className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-ink"
+            className="absolute z-10 top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-ink"
           >
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: grade.dot }} />
             {product.grade === "New" ? "New" : `Grade ${product.grade}`}
           </span>
           {isOnSale(product) && (
-            <span className="absolute top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="absolute z-10 top-3 right-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">
               Sale
             </span>
           )}
-          <ProductImage
-            product={product}
-            className="h-44 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
-          />
+          <div className="absolute inset-0 p-6">
+            <ProductImage
+              product={product}
+              className="w-full h-full drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
         </div>
         <div className="mt-5">
           <p className="text-[11px] uppercase tracking-wide text-ink-soft">{product.brand}</p>

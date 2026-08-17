@@ -68,8 +68,8 @@ export default function HomeHero({ hero }) {
         style={{ y, scale, opacity: fade }}
         className="mx-auto mt-14 flex max-w-page items-center justify-center px-5"
       >
-        <div className="relative">
-          <ProductImage product={hero} className="h-[360px] md:h-[460px] w-auto drop-shadow-2xl" />
+        <div className="relative w-[300px] md:w-[380px] aspect-[4/5]">
+          <ProductImage product={hero} className="w-full h-full drop-shadow-2xl" />
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
