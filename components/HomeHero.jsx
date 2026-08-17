@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import PhoneVisual from "./PhoneVisual";
+import ProductImage from "./ProductImage";
 import { getProduct } from "../lib/products";
 import { gbp } from "../lib/format";
 
@@ -71,7 +71,7 @@ export default function HomeHero() {
         className="mx-auto mt-14 flex max-w-page items-center justify-center px-5"
       >
         <div className="relative">
-          <PhoneVisual product={hero} className="h-[360px] md:h-[460px] w-auto drop-shadow-2xl" />
+          <ProductImage product={hero} className="h-[360px] md:h-[460px] w-auto drop-shadow-2xl" />
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

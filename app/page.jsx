@@ -2,7 +2,7 @@ import Link from "next/link";
 import HomeHero from "../components/HomeHero";
 import Reveal from "../components/Reveal";
 import ProductCard from "../components/ProductCard";
-import PhoneVisual from "../components/PhoneVisual";
+import ProductImage from "../components/ProductImage";
 import { products, getProduct } from "../lib/products";
 import { gbp } from "../lib/format";
 
@@ -67,7 +67,7 @@ export default function Home() {
                     Explore {c.title} →
                   </span>
                 </div>
-                <PhoneVisual
+                <ProductImage
                   product={c.p}
                   className="absolute -right-6 -bottom-6 h-64 w-auto opacity-90 drop-shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"
                 />
@@ -129,7 +129,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="pointer-events-none absolute -right-10 -bottom-16 opacity-30 md:opacity-70">
-              <PhoneVisual product={getProduct("ip14pm-1tb-b")} className="h-80 w-auto rotate-12" />
+              <ProductImage product={getProduct("ip14pm-1tb-b")} className="h-80 w-auto rotate-12" />
             </div>
           </div>
         </Reveal>

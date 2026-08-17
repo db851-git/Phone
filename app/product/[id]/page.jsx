@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import PhoneVisual from "../../../components/PhoneVisual";
+import ProductImage from "../../../components/ProductImage";
 import AddToCart from "../../../components/AddToCart";
 import ProductCard from "../../../components/ProductCard";
 import Reveal from "../../../components/Reveal";
@@ -45,7 +45,7 @@ export default function ProductPage({ params }) {
           {/* visual */}
           <div className="md:sticky md:top-24">
             <div className="relative flex items-center justify-center rounded-[32px] bg-chalk p-10 h-[420px] md:h-[520px]">
-              <PhoneVisual product={product} className="h-full w-auto drop-shadow-2xl" />
+              <ProductImage product={product} className="h-full w-auto drop-shadow-2xl" />
               <span className="absolute top-5 left-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm">
                 <span className="w-2 h-2 rounded-full" style={{ background: grade.dot }} />
                 {grade.label}

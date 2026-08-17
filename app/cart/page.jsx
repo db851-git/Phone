@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../components/CartProvider";
-import PhoneVisual from "../../components/PhoneVisual";
+import ProductImage from "../../components/ProductImage";
 import { getProduct, GRADE_INFO } from "../../lib/products";
 import { gbp } from "../../lib/format";
 
@@ -43,7 +43,7 @@ export default function CartPage() {
                     className="flex gap-4 py-5"
                   >
                     <Link href={`/product/${item.id}`} className="shrink-0 w-24 h-28 rounded-2xl bg-chalk flex items-center justify-center">
-                      <PhoneVisual product={full} className="h-24 w-auto" />
+                      <ProductImage product={full} className="h-24 w-auto" />
                     </Link>
                     <div className="flex-1">
                       <div className="flex justify-between gap-4">

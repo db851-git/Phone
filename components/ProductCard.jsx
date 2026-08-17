@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import PhoneVisual from "./PhoneVisual";
+import ProductImage from "./ProductImage";
 import { GRADE_INFO } from "../lib/products";
 import { gbp } from "../lib/format";
 
@@ -26,7 +26,7 @@ export default function ProductCard({ product, index = 0 }) {
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: grade.dot }} />
             {product.grade === "New" ? "New" : `Grade ${product.grade}`}
           </span>
-          <PhoneVisual
+          <ProductImage
             product={product}
             className="h-44 w-auto drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
           />

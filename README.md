@@ -13,10 +13,15 @@ smooth, tasteful scroll animations.
 - **Checkout** — a working multi-step order form with confirmation (demo, no real payment)
 - **Sell / Trade-In** with an instant quote estimator (model × storage × condition)
 - **About** page explaining grading, warranty and the store
+- **Admin stock manager** at `/admin` — add/edit/delete products, import/export JSON
+- **`/api/products`** endpoint serving the live catalog as JSON
+- **Real-photo support** with automatic SVG fallback (`components/ProductImage.jsx`)
 - Fully responsive, keyboard-friendly, and respects `prefers-reduced-motion`
 
-Inventory (`lib/products.js`) is seeded with real models, grades and prices from
-the PhonePro shop window — swap it for a CMS or database when you're ready.
+Inventory lives in `data/products.json` (seeded with real models, grades and
+prices from the PhonePro shop window). Manage it from `/admin`, or swap it for a
+CMS / database when you're ready. See **DEPLOY.md** to go live and
+**public/images/README.md** to add real photos.
 
 ## Getting started
 
