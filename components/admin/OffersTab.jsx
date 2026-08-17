@@ -26,7 +26,11 @@ export default function OffersTab({ dbEnabled, flash }) {
       body: JSON.stringify({ key: "offer", value: offer }),
     });
     setSaving(false);
-    flash(res.ok ? "Offer banner saved" : "Save failed");
+    if (res.ok) flash("Offer banner saved");
+    else {
+      const err = await res.json().catch(() => ({}));
+      flash(err.error || `Save failed (${res.status})`);
+    }
   };
 
   const applyBulk = async (clear = false) => {
