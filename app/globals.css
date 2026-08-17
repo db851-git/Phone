@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: #ffffff;
+  color: #1d1d1f;
+  overflow-x: hidden;
+}
+
+/* Apple-like tight display headings */
+.display {
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* subtle top-gradient wash used on hero sections */
+.wash {
+  background: radial-gradient(120% 90% at 50% -10%, #ffe6d6 0%, #f5f5f7 42%, #ffffff 100%);
+}
+
+/* thin, elegant scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+  border: 3px solid #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
