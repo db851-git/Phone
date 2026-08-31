@@ -2,9 +2,12 @@ import Link from "next/link";
 import HomeHero from "../components/HomeHero";
 import Reveal from "../components/Reveal";
 import ProductCard from "../components/ProductCard";
-import PhoneVisual from "../components/PhoneVisual";
-import { products, getProduct } from "../lib/products";
+import ProductImage from "../components/ProductImage";
+import { getProducts } from "../lib/catalog";
 import { gbp } from "../lib/format";
+
+// Re-render at most once a minute so admin edits appear without a redeploy.
+export const revalidate = 60;
 
 const FEATURED = [
   "ip17pm-256-aplus",
@@ -24,14 +27,20 @@ const TRUST = [
   { k: "14-day", v: "no-quibble returns" },
 ];
 
-export default function Home() {
-  const featured = FEATURED.map(getProduct).filter(Boolean);
-  const iphone = getProduct("ip16pm-256-aplus");
-  const samsung = getProduct("sgs25u-256-a");
+export default async function Home() {
+  const all = await getProducts();
+  const byId = (id) => all.find((p) => p.id === id);
+  // Admin-flagged products drive the homepage; fall back to the curated list.
+  const flagged = all.filter((p) => p.featured);
+  const featured = (flagged.length >= 4 ? flagged : FEATURED.map(byId).filter(Boolean)).slice(0, 8);
+  const iphone = byId("ip16pm-256-aplus") || all.find((p) => p.brand === "Apple");
+  const samsung = byId("sgs25u-256-a") || all.find((p) => p.brand === "Samsung");
+  const hero = byId("ip17pm-512-new") || all[0];
+  const total = all.length;
 
   return (
     <>
-      <HomeHero />
+      <HomeHero hero={hero} />
 
       {/* trust strip */}
       <section className="border-y border-black/5 bg-white">
@@ -67,7 +76,7 @@ export default function Home() {
                     Explore {c.title} →
                   </span>
                 </div>
-                <PhoneVisual
+                <ProductImage
                   product={c.p}
                   className="absolute -right-6 -bottom-6 h-64 w-auto opacity-90 drop-shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"
                 />
@@ -89,7 +98,7 @@ export default function Home() {
                 <p className="mt-2 text-[15px] text-ink-soft">Hand-checked stock, ready to ship.</p>
               </div>
               <Link href="/shop" className="hidden md:inline text-accent text-[14px] font-medium hover:underline">
-                View all {products.length} →
+                View all {total} →
               </Link>
             </div>
           </Reveal>
@@ -100,7 +109,7 @@ export default function Home() {
           </div>
           <div className="mt-8 text-center md:hidden">
             <Link href="/shop" className="text-accent text-[14px] font-medium hover:underline">
-              View all {products.length} phones →
+              View all {total} phones →
             </Link>
           </div>
         </div>
@@ -129,7 +138,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="pointer-events-none absolute -right-10 -bottom-16 opacity-30 md:opacity-70">
-              <PhoneVisual product={getProduct("ip14pm-1tb-b")} className="h-80 w-auto rotate-12" />
+              <ProductImage product={byId("ip14pm-1tb-b") || all[all.length - 1]} className="h-80 w-auto rotate-12" />
             </div>
           </div>
         </Reveal>

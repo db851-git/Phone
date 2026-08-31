@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "./CartProvider";
+import { effectivePrice } from "../lib/products";
 
 export default function AddToCart({ product }) {
   const { add } = useCart();
@@ -17,7 +18,7 @@ export default function AddToCart({ product }) {
       storage: product.storage,
       color: product.color,
       grade: product.grade,
-      price: product.price,
+      price: effectivePrice(product),
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2200);

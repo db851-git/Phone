@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "./ProductCard";
-import { products, BRANDS, GRADE_INFO } from "../lib/products";
+import { seedProducts, BRANDS, GRADE_INFO } from "../lib/products";
 
 const GRADES = ["New", "A+", "A", "B+", "B", "C"];
 const SORTS = [
@@ -15,6 +15,8 @@ const SORTS = [
 
 export default function ShopBrowser() {
   const params = useSearchParams();
+  // Start from the seed for instant paint, then swap in the live DB catalog.
+  const [catalog, setCatalog] = useState(seedProducts);
   const [brand, setBrand] = useState([]);
   const [grade, setGrade] = useState([]);
   const [query, setQuery] = useState("");
@@ -30,8 +32,22 @@ export default function ShopBrowser() {
     setTag(t || null);
   }, [params]);
 
+  // Pull the live catalog from the API (reflects admin edits).
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/products")
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive && Array.isArray(d) && d.length) setCatalog(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
-    let list = products.filter((p) => {
+    let list = catalog.filter((p) => {
       if (brand.length && !brand.includes(p.brand)) return false;
       if (grade.length && !grade.includes(p.grade)) return false;
       if (tag && !p.tags.includes(tag)) return false;
@@ -56,7 +72,7 @@ export default function ShopBrowser() {
         break;
     }
     return list;
-  }, [brand, grade, query, sort, maxPrice, tag]);
+  }, [catalog, brand, grade, query, sort, maxPrice, tag]);
 
   const toggle = (value, setter, current) =>
     setter(current.includes(value) ? current.filter((v) => v !== value) : [...current, value]);

@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import PhoneVisual from "./PhoneVisual";
-import { getProduct } from "../lib/products";
+import ProductImage from "./ProductImage";
 import { gbp } from "../lib/format";
 
-export default function HomeHero() {
+export default function HomeHero({ hero }) {
   const ref = useRef(null);
-  const hero = getProduct("ip17pm-512-new");
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -70,15 +68,17 @@ export default function HomeHero() {
         style={{ y, scale, opacity: fade }}
         className="mx-auto mt-14 flex max-w-page items-center justify-center px-5"
       >
-        <div className="relative">
-          <PhoneVisual product={hero} className="h-[360px] md:h-[460px] w-auto drop-shadow-2xl" />
+        <div className="relative w-[300px] md:w-[380px] aspect-[4/5]">
+          <ProductImage product={hero} className="w-full h-full drop-shadow-2xl" />
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.5 }}
             className="absolute -right-4 top-8 md:right-10 rounded-2xl bg-white/90 backdrop-blur px-4 py-3 shadow-lg text-left"
           >
-            <p className="text-[11px] text-ink-soft">iPhone 17 Pro Max · New</p>
+            <p className="text-[11px] text-ink-soft">
+              {hero.name} · {hero.grade === "New" ? "New" : `Grade ${hero.grade}`}
+            </p>
             <p className="text-[18px] font-semibold text-ink">{gbp(hero.price)}</p>
           </motion.div>
         </div>

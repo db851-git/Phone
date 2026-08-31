@@ -1,0 +1,64 @@
+// PhonePro database schema.
+// Postgres in production (Vercel Postgres / Neon / Supabase) via DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String   @id
+  brand       String
+  name        String
+  storage     String
+  grade       String
+  price       Float
+  salePrice   Float? // optional markdown; when set & lower, it's the live price
+  color       String
+  description String   @default("")
+  image       String   @default("") // primary thumbnail (mirrors images[0])
+  images      String[] @default([]) // full photo gallery
+  tags        String[] @default([])
+  featured    Boolean  @default(false)
+  stock       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([brand])
+  @@index([grade])
+  @@index([featured])
+}
+
+// Trade-in / buy-back base values, admin-managed. The Sell page quote engine
+// reads these instead of a hardcoded list. Multipliers for storage/condition
+// live in Setting("tradeIn") so the whole engine is editable.
+model TradeInModel {
+  id        String   @id @default(cuid())
+  name      String
+  brand     String   @default("Apple")
+  baseValue Float // buy-back value for a like-new 128GB unit
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Generic key/value store for site settings: the offer banner, trade-in
+// multipliers, store details, etc. Value is arbitrary JSON.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// Uploaded photos, stored in the database so uploads work with no extra
+// storage service to configure. Served via GET /api/images/:id.
+model Image {
+  id          String   @id @default(cuid())
+  contentType String
+  data        Bytes
+  createdAt   DateTime @default(now())
+}

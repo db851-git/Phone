@@ -25,6 +25,7 @@ const COLS = [
       { href: "/about", label: "About PhonePro" },
       { href: "/about", label: "Visit the store" },
       { href: "/about", label: "Contact us" },
+      { href: "/admin", label: "Staff · Manage stock" },
     ],
   },
 ];
